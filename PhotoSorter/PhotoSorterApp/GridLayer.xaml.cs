@@ -25,11 +25,13 @@ namespace PhotoSorterApp
         private void BtnExecute_Click(object sender, RoutedEventArgs e)
         {
             string fileExtention = "*";
+            string CopyOrMoveFiles = "";
             string fileNamePunctuationMark = "";
+            string fileNamePrefixMark = "";
             int filesAmount = 0;
 
             //status bar start runing
-            StatusProgresBar.IsIndeterminate = true;
+            //StatusProgresBar.IsIndeterminate = true;
 
             if (txtDestinationPath.Text != "" && txtSourcePath.Text != "")
             {
@@ -40,8 +42,6 @@ namespace PhotoSorterApp
 
                 //new copy location of files
                 string destinationPath = @txtSourcePath.Text;
-
-
 
 
                 //if checkbox checked looking for all files, if not checked then looking for exactly selected files
@@ -59,6 +59,17 @@ namespace PhotoSorterApp
                     {
                         fileExtention = radioMp4.Content.ToString();
                     }
+                }
+
+
+                //checkbox for selecting Copy or Move original files
+                if (radioPhotoCopy.IsChecked == true)
+                {
+                    CopyOrMoveFiles = "Copy";
+                }
+                else if (radioPhotoMove.IsChecked == true)
+                {
+                    CopyOrMoveFiles = "Move";
                 }
 
 
@@ -111,12 +122,41 @@ namespace PhotoSorterApp
                 }
                 else if (radioThree.IsChecked == true)
                 {
+                    //write to list substringed file names only first 8 symbols file name TYPE '2019.03.20__13476'
+                    fileNamePunctuationMark = ".";
+                    foreach (string file in allFiles)
+                    {
+                        //we need only year\month so substring 6 symbols
+                        fileNames.Add(Path.GetFileNameWithoutExtension(file).Substring(0, 7));
 
+                    }
+
+                    foreach (var names in fileNames.Distinct())
+                    {
+                        //write new Directories years\month
+                        newDirectoryNames.Add(Path.Combine(names.Substring(0, 4), names.Substring(5, 2)));
+                    }
                 }
                 else if (radioFour.IsChecked == true)
                 {
+                    //write to list substringed file names only first 8 symbols file name TYPE 'IMG_20190805_101154'
+                    fileNamePunctuationMark = "";
+                    fileNamePrefixMark = "IMG_";
+                    foreach (string file in allFiles)
+                    {
+                        //we need only year\month so substring 6 symbols
+                        fileNames.Add(Path.GetFileNameWithoutExtension(file).Substring(0, 10));
 
+                    }
+
+                    foreach (var names in fileNames.Distinct())
+                    {
+                        //write new Directories years\month
+                        newDirectoryNames.Add(Path.Combine(names.Substring(4, 4), names.Substring(8, 2)));
+                    }
                 }
+
+
 
                 //create all needed directories
                 foreach (var directoryName in newDirectoryNames)
@@ -125,37 +165,47 @@ namespace PhotoSorterApp
                 }
 
                 int i = 0;
-                foreach (var newDirectoryName in newDirectoryNames)
-                {
-                    //looking for files like 201801*.jpg in directory 
-                    var files = Directory.GetFiles(rootPath, $"{newDirectoryName}*{fileExtention}".Replace(@"\", fileNamePunctuationMark), SearchOption.AllDirectories);
 
-                    foreach (var file in files)
+
+                //if selected Copy to.. makes copy of original files
+                if (CopyOrMoveFiles == "Copy")
+                {
+
+                    foreach (var newDirectoryName in newDirectoryNames)
                     {
-                        File.Copy(file, $"{Path.Combine(destinationPath, newDirectoryName)}\\{Path.GetFileName(file)}", true);
-                        //Console.Clear();
-                        //Console.Write("{0}-{1}", Path.GetFileNameWithoutExtension(file), i++);
-                        //txtTest.Text = $"{filesAmount--}";
+                        //looking for files like 201801*.jpg in directory 
+                        var files = Directory.GetFiles(rootPath, $"{fileNamePrefixMark}{newDirectoryName}*{fileExtention}".Replace(@"\", fileNamePunctuationMark), SearchOption.AllDirectories);
+
+                        foreach (var file in files)
+                        {
+                            //true for Owervrite true/false
+                            File.Copy(file, $"{Path.Combine(destinationPath, newDirectoryName)}\\{Path.GetFileName(file)}", true);
+                        }
                     }
 
+                }
+                //if selected Move to.. moves all original files
+                else if (CopyOrMoveFiles == "Move")
+                {
+                    foreach (var newDirectoryName in newDirectoryNames)
+                    {
+                        //looking for files like 201801*.jpg in directory 
+                        var files = Directory.GetFiles(rootPath, $"{fileNamePrefixMark}{newDirectoryName}*{fileExtention}".Replace(@"\", fileNamePunctuationMark), SearchOption.AllDirectories);
+
+                        foreach (var file in files)
+                        {
+                            File.Move(file, $"{Path.Combine(destinationPath, newDirectoryName)}\\{Path.GetFileName(file)}");
+                        }
+                    }
                 }
 
                 //check if all files done and stop statusbar
 
-                StatusProgresBar.IsIndeterminate = false;
+                //StatusProgresBar.IsIndeterminate = false;
 
 
 
-
-
-
-
-
-
-
-
-
-            }
+            }//make browse boxes red if no folder selected
             else if (txtDestinationPath.Text == "")
             {
                 txtTitleDestination.Foreground = Brushes.Red;
@@ -164,7 +214,6 @@ namespace PhotoSorterApp
             {
                 txtTitleSource.Foreground = Brushes.Red;
             }
-
 
         }
 
